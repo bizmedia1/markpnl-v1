@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Nextel V1 Admin</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#061C16;
+color:#fff;
+padding:24px;
+}
+
+.admin{
+width:100%;
+max-width:520px;
+margin:auto;
+}
+
+h1{
+font-size:28px;
+margin-bottom:8px;
+}
+
+.subtitle{
+color:#9EADA8;
+font-size:14px;
+margin-bottom:30px;
+}
+
+.card{
+background:#0A3027;
+border:1px solid rgba(255,255,255,.08);
+border-radius:22px;
+padding:22px;
+margin-bottom:22px;
+}
+
+.card h2{
+font-size:18px;
+margin-bottom:20px;
+color:#E7CA22;
+}
+
+.field{
+margin-bottom:18px;
+}
+
+.field:last-child{
+margin-bottom:0;
+}
+
+label{
+display:block;
+font-size:13px;
+font-weight:700;
+color:#A9B7B2;
+margin-bottom:8px;
+}
+
+input{
+width:100%;
+height:52px;
+border-radius:12px;
+border:1px solid rgba(255,255,255,.1);
+background:#071F19;
+color:#fff;
+font-size:16px;
+padding:0 15px;
+outline:none;
+}
+
+input:focus{
+border-color:#E7CA22;
+}
+
+button{
+width:100%;
+height:56px;
+border:0;
+border-radius:999px;
+background:#E7CA22;
+color:#111;
+font-size:16px;
+font-weight:800;
+cursor:pointer;
+}
+
+button:disabled{
+opacity:.6;
+}
+
+#status{
+text-align:center;
+font-size:14px;
+margin-top:18px;
+min-height:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="admin">
+
+<h1>Nextel V1 Admin</h1>
+
+<p class="subtitle">
+Update payment account details and redirect link.
+</p>
+
+<div class="card">
+
+<h2>Payment Account</h2>
+
+<div class="field">
+<label>Bank Name</label>
+<input id="bankName">
+</div>
+
+<div class="field">
+<label>Account Number</label>
+<input id="accountNumber">
+</div>
+
+<div class="field">
+<label>Account Name</label>
+<input id="accountName">
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Redirect</h2>
+
+<div class="field">
+<label>Button Redirect URL</label>
+<input id="redirectUrl" type="url">
+</div>
+
+</div>
+
+<button id="saveBtn">
+Save Changes
+</button>
+
+<div id="status"></div>
+
+</div>
+
+<script>
+
+const saveBtn=document.getElementById("saveBtn");
+
+const status=document.getElementById("status");
+
+
+/* =========================
+LOAD CURRENT SETTINGS
+========================= */
+
+async function loadSettings(){
+
+try{
+
+const response=await fetch(
+"/api/settings?t="+Date.now()
+);
+
+const data=await response.json();
+
+document.getElementById("bankName").value=
+data.account?.bankName || "";
+
+document.getElementById("accountNumber").value=
+data.account?.accountNumber || "";
+
+document.getElementById("accountName").value=
+data.account?.accountName || "";
+
+document.getElementById("redirectUrl").value=
+data.redirectUrl || "";
+
+}catch(error){
+
+status.style.color="#ff7070";
+
+status.textContent=
+"Could not load current settings.";
+
+}
+
+}
+
+
+/* =========================
+SAVE SETTINGS
+========================= */
+
+saveBtn.onclick=async()=>{
+
+saveBtn.disabled=true;
+
+saveBtn.textContent="Saving...";
+
+status.textContent="";
+
+
+const payload={
+
+account:{
+
+bankName:
+document.getElementById("bankName").value.trim(),
+
+accountNumber:
+document.getElementById("accountNumber").value.trim(),
+
+accountName:
+document.getElementById("accountName").value.trim()
+
+},
+
+redirectUrl:
+document.getElementById("redirectUrl").value.trim()
+
+};
+
+
+try{
+
+const response=await fetch(
+"/api/save-payment",
+{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(payload)
+
+});
+
+
+const result=await response.json();
+
+
+if(!response.ok){
+
+throw new Error(
+result.error || "Update failed"
+);
+
+}
+
+
+status.style.color="#69F987";
+
+status.textContent=
+"Payment settings updated successfully.";
+
+
+}catch(error){
+
+status.style.color="#ff7070";
+
+status.textContent=
+error.message || "Something went wrong.";
+
+}
+
+
+saveBtn.disabled=false;
+
+saveBtn.textContent="Save Changes";
+
+};
+
+
+loadSettings();
+
+</script>
+
+</body>
+</html>
